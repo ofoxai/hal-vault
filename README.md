@@ -206,6 +206,21 @@ secrets:
   no daemon, no network, no cloud account — the attack surface is one file
   and one key you already protect.
 
+## Agent skill
+
+The companion skill repo
+[ofoxai/hal-vault-skill](https://github.com/ofoxai/hal-vault-skill) teaches
+agents the safety contract and workflows above (masked-only references,
+`--reveal` exclusively inside command substitution, refuse to recite raw
+values):
+
+```
+npx skills add ofoxai/hal-vault-skill
+```
+
+Works with Claude Code, Cursor, Copilot, and 70+ other agents via
+[skills.sh](https://skills.sh).
+
 ## Library
 
 The `vault` package is a supported public API:

@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.0.2 (unreleased)
+## v0.0.2 - 2026-06-11
 
 - `init` now defaults to a dedicated `~/.ssh/hal-vault_ed25519` key pair,
   generated on first use, instead of borrowing `~/.ssh/id_ed25519` /
@@ -8,6 +8,10 @@
   Bring an existing key with `-r` / `-i`; pick the database directory with
   `-d` (unchanged).
 - New library function `vault.GenerateSSHKeyPair`.
+- Companion agent skill released:
+  [ofoxai/hal-vault-skill](https://github.com/ofoxai/hal-vault-skill)
+  (`npx skills add ofoxai/hal-vault-skill`) — teaches agents the safety
+  contract and workflows.
 
 ## v0.0.1 - 2026-06-11
 
