@@ -121,7 +121,7 @@ func Open(dir string) (*Store, error) {
 	data, err := os.ReadFile(filepath.Join(dir, configFile))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil, fmt.Errorf("vault not initialized in %s (run \"hal-vault init\")", dir)
+			return nil, fmt.Errorf("no vault at %s — run \"hal-vault init\" to bring one online", dir)
 		}
 		return nil, err
 	}

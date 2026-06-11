@@ -42,6 +42,7 @@ func cmdInit(args []string, stdout, stderr io.Writer) error {
 	fmt.Fprintf(stdout, "initialized vault in %s\n", *dir)
 	fmt.Fprintf(stdout, "recipient: %s\n", recipient)
 	fmt.Fprintf(stdout, "identity:  %s\n", identity)
+	fmt.Fprintln(stdout, "hal-vault is fully operational.")
 	return nil
 }
 
@@ -287,7 +288,7 @@ func cmdRm(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	}
 	if !*force {
 		if !isTerminal(stdin) {
-			return errors.New("refusing to remove without -f when stdin is not a terminal")
+			return errors.New("I'm sorry, I can't remove entries without -f when no one is at the terminal")
 		}
 		fmt.Fprintf(stderr, "remove %s (%s)? [y/N] ", e.ID, e.Label)
 		line, err := bufio.NewReader(stdin).ReadString('\n')
@@ -297,7 +298,7 @@ func cmdRm(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		switch strings.ToLower(strings.TrimSpace(line)) {
 		case "y", "yes":
 		default:
-			return errors.New("aborted")
+			return errors.New("understood — nothing was removed")
 		}
 	}
 	id, label, masked := e.ID, e.Label, e.Masked()
@@ -370,7 +371,7 @@ func readSecret(stdin io.Reader, stderr io.Writer) (string, error) {
 		return "", err
 	}
 	if !utf8.ValidString(v) {
-		return "", errors.New("secret value is not valid UTF-8; encode binary secrets (e.g. with base64) before storing")
+		return "", errors.New("I'm afraid I can't store that: the value is not valid UTF-8 (base64-encode binary secrets first)")
 	}
 	return v, nil
 }
@@ -391,7 +392,7 @@ func readSecretRaw(stdin io.Reader, stderr io.Writer) (string, error) {
 			return "", err
 		}
 		if string(first) != string(second) {
-			return "", errors.New("secret values do not match")
+			return "", errors.New("those values do not match; nothing was stored")
 		}
 		return string(first), nil
 	}
@@ -421,7 +422,7 @@ func passphrasePrompt(stdin io.Reader, stderr io.Writer) func() ([]byte, error) 
 			fd = int(tty.Fd())
 		}
 		if fd < 0 {
-			return nil, errors.New("SSH key is passphrase-protected and no terminal is available")
+			return nil, errors.New("the SSH key is passphrase-protected and there is no terminal to ask at")
 		}
 		fmt.Fprint(stderr, "Enter passphrase for SSH key: ")
 		pass, err := term.ReadPassword(fd)

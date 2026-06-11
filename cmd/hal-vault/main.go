@@ -21,6 +21,7 @@ import (
 var Version = "(devel)"
 
 const usage = `hal-vault is a simple secret store encrypted with your SSH key.
+It keeps your secrets. I'm afraid it can't let anyone else read them.
 
 Usage:
     hal-vault init [-r PUBKEY] [-i PRIVKEY]
@@ -109,7 +110,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	case "rm":
 		err = cmdRm(rest, stdin, stdout, stderr)
 	default:
-		fmt.Fprintf(stderr, "hal-vault: unknown command %q\n", cmd)
+		fmt.Fprintf(stderr, "hal-vault: I'm afraid I don't know the command %q\n", cmd)
 		io.WriteString(stderr, usage)
 		return 2
 	}

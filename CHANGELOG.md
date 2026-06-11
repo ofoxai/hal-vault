@@ -1,43 +1,23 @@
 # Changelog
 
+## v0.0.3 - 2026-06-11
+
+- Homebrew is now the recommended install: `brew install ofoxai/tap/hal-vault`.
+- The CLI found its voice. Messages are calmer, clearer, and occasionally
+  quote a certain shipboard computer.
+- A much leaner README.
+
 ## v0.0.2 - 2026-06-11
 
-- `init` now defaults to a dedicated `~/.ssh/hal-vault_ed25519` key pair,
-  generated on first use, instead of borrowing `~/.ssh/id_ed25519` /
-  `id_rsa`. Rotating your day-to-day SSH keys can no longer lock the vault.
-  Bring an existing key with `-r` / `-i`; pick the database directory with
-  `-d` (unchanged).
-- New library function `vault.GenerateSSHKeyPair`.
-- Companion agent skill released:
-  [ofoxai/hal-vault-skill](https://github.com/ofoxai/hal-vault-skill)
-  (`npx skills add ofoxai/hal-vault-skill`) — teaches agents the safety
-  contract and workflows.
+- `init` now generates a dedicated `~/.ssh/hal-vault_ed25519` key instead of
+  borrowing your day-to-day SSH keys. Use `-r`/`-i` for an existing key,
+  `-d` for the vault directory.
+- New library function: `vault.GenerateSSHKeyPair`.
+- Companion agent skill: `npx skills add ofoxai/hal-vault-skill`.
 
 ## v0.0.1 - 2026-06-11
 
-Initial release.
-
-- Single-file vault: the whole database is one age-encrypted blob
-  (`secrets.db`) with an automatic previous-generation backup
-  (`secrets.db.bak`) and atomic, durable saves (fsync + single rename; a
-  complete database exists at every instant).
-- Concurrency-safe writes: mutating commands serialize through an exclusive
-  advisory file lock, so concurrent hal-vault processes cannot lose each
-  other's writes.
-- SSH-key encryption via `filippo.io/age/agessh`: encrypt to `ssh-ed25519`
-  or `ssh-rsa` public keys, decrypt with the matching OpenSSH private key,
-  with terminal passphrase prompting for protected keys.
-- Entry model with id, label, value, type (`api_key`, `password`, `token`,
-  `ssh_key`, `cert`, `identity`, `other`), tags, note, and timestamps.
-- Agent-safe masking: all output is masked by default, revealing at most
-  8 characters of any secret; raw values reach stdout only via
-  `get --reveal`.
-- CLI commands: `init`, `add`, `get`, `list`, `search`, `update`, `rm`,
-  `version`, `help` — with `--json` output for machine parsing and `-d` /
-  `HAL_VAULT_DIR` vault-directory overrides.
-- Secrets are never accepted on argv: values are read from stdin or a hidden
-  double prompt on the terminal.
-- Search with case-insensitive substring query plus exact `--tag` and
-  `--type` filters.
-- Public Go library (`github.com/ofoxai/hal-vault/vault`) that never prints
-  and whose errors never contain secret values.
+Initial release: a single age-encrypted vault file keyed to an SSH key.
+CRUD and tag search, masked-by-default output (`--reveal` is the only way
+out), values never on argv, atomic durable saves, cross-process locking,
+and a public Go library.

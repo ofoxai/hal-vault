@@ -130,8 +130,8 @@ func TestOpenUninitialized(t *testing.T) {
 	if err == nil {
 		t.Fatal("Open of empty dir succeeded, want error")
 	}
-	if !strings.Contains(err.Error(), "not initialized") {
-		t.Errorf("error %q does not mention initialization", err)
+	if !strings.Contains(err.Error(), "hal-vault init") {
+		t.Errorf("error %q does not point to \"hal-vault init\"", err)
 	}
 }
 
