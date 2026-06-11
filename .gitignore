@@ -1,0 +1,5 @@
+/hal-vault
+dist/
+.DS_Store
+*.tar.gz
+*.zip

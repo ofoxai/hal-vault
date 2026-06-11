@@ -1,0 +1,75 @@
+name: Build release binaries
+on:
+  release:
+    types: [published]
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  build:
+    name: Build hal-vault-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
+    strategy:
+      matrix:
+        include:
+          - { GOOS: linux, GOARCH: amd64 }
+          - { GOOS: linux, GOARCH: arm64 }
+          - { GOOS: darwin, GOARCH: amd64 }
+          - { GOOS: darwin, GOARCH: arm64 }
+          - { GOOS: windows, GOARCH: amd64 }
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0 # for git describe
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: stable
+      - name: Build binary
+        run: |
+          VERSION="$(git describe --tags --always)"
+          DIR="$(mktemp -d)"
+          mkdir "$DIR/hal-vault"
+          cp LICENSE "$DIR/hal-vault"
+          go build -o "$DIR/hal-vault" -trimpath -ldflags "-X main.Version=$VERSION" ./cmd/hal-vault
+          if [ "$GOOS" == "windows" ]; then
+            ( cd "$DIR"; zip hal-vault.zip -r hal-vault )
+            mv "$DIR/hal-vault.zip" "hal-vault-$VERSION-$GOOS-$GOARCH.zip"
+          else
+            tar -cvzf "hal-vault-$VERSION-$GOOS-$GOARCH.tar.gz" -C "$DIR" hal-vault
+          fi
+        env:
+          CGO_ENABLED: 0
+          GOOS: ${{ matrix.GOOS }}
+          GOARCH: ${{ matrix.GOARCH }}
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: hal-vault-binary-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
+          path: hal-vault-*
+  upload:
+    name: Upload release binaries
+    if: github.event_name == 'release'
+    needs: build
+    permissions:
+      contents: write
+      attestations: write
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download workflow artifacts
+        uses: actions/download-artifact@v5
+        with:
+          merge-multiple: true
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: "hal-vault-*"
+      - name: Upload release artifacts
+        run: gh release upload "$GITHUB_REF_NAME" hal-vault-*
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
