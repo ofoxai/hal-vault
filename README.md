@@ -20,18 +20,13 @@ Binaries for Linux, macOS, and Windows are published on the
 provenance attestations.
 
 ```
-# Download the archive for your platform (or use `gh release download`),
-# then unpack and install:
+# Download the archive for your platform, e.g. with the GitHub CLI:
+gh release download v0.0.1 --repo ofoxai/hal-vault --pattern '*darwin-arm64*'
+
+# Unpack and install:
 tar -xzf hal-vault-v0.0.1-darwin-arm64.tar.gz
 install -m 0755 hal-vault/hal-vault /usr/local/bin/hal-vault
 hal-vault version
-```
-
-While the repository is private (before the 1.0.0 public release), use the
-GitHub CLI to fetch a release:
-
-```
-gh release download v0.0.1 --repo ofoxai/hal-vault --pattern '*darwin-arm64*'
 ```
 
 Provenance can be verified with `gh attestation verify <archive> --repo ofoxai/hal-vault`.
@@ -41,9 +36,6 @@ Provenance can be verified with `gh attestation verify <archive> --repo ofoxai/h
 ```
 go install github.com/ofoxai/hal-vault/cmd/hal-vault@latest
 ```
-
-(While the repository is private this requires repo access and
-`GOPRIVATE=github.com/ofoxai`.)
 
 ## Usage
 
