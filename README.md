@@ -3,7 +3,7 @@
 hal-vault is a simple, modern and secure secret store CLI and Go library, with SSH-key encryption, tag search, and agent-safe masked output — built on [age](https://github.com/FiloSottile/age), built for AI agents.
 
 - **One encrypted file.** Your whole vault is a single age-encrypted blob (`secrets.db`) plus an automatic previous-generation backup (`secrets.db.bak`). Saves are atomic and durable, writes are serialized across processes with an advisory lock. Easy to copy, sync, and audit.
-- **Your SSH key is the key.** Encrypts to your existing `ssh-ed25519` or `ssh-rsa` public key and decrypts with the matching private key (passphrase-protected keys are prompted on the terminal). No new key material to manage.
+- **SSH keys are the keys.** A dedicated `~/.ssh/hal-vault_ed25519` key pair is generated on first init, or bring your own existing `ssh-ed25519` / `ssh-rsa` pair with `-r`/`-i` (passphrase-protected keys are prompted on the terminal). The same key discipline you already trust for SSH.
 - **Masked by default.** Every table, detail view, and JSON output shows secrets masked (`sk-p…7890 (24 chars)`). Raw values reach stdout only through the explicit `--reveal` flag.
 - **Never on argv.** Secret values are read from stdin or a hidden terminal prompt — they never appear in shell history or `ps` output.
 - **Tag search.** Free-text query plus exact `--tag` and `--type` filters.
@@ -41,19 +41,30 @@ go install github.com/ofoxai/hal-vault/cmd/hal-vault@latest
 
 ### Initialize a vault
 
-`init` binds the vault to an SSH key pair. By default it looks for
-`~/.ssh/id_ed25519(.pub)`, then `~/.ssh/id_rsa(.pub)`.
+`init` binds the vault to an SSH key pair. By default it uses the dedicated
+key `~/.ssh/hal-vault_ed25519(.pub)`, generating it on first use — your
+day-to-day SSH keys stay untouched, and rotating them never locks the vault.
 
 ```
 $ hal-vault init
+generated SSH key pair: /home/you/.ssh/hal-vault_ed25519
 initialized vault in /home/you/.hal-vault
-recipient: /home/you/.ssh/id_ed25519.pub
-identity:  /home/you/.ssh/id_ed25519
+recipient: /home/you/.ssh/hal-vault_ed25519.pub
+identity:  /home/you/.ssh/hal-vault_ed25519
 ```
 
-Use `-r` / `-i` to pick a specific key pair, and `-d` to choose a vault
-directory (every command accepts `-d`; the `HAL_VAULT_DIR` environment
-variable works too).
+To use an existing SSH key instead, pass `-r` / `-i` (any `ssh-ed25519` or
+`ssh-rsa` pair works), and pick the database directory with `-d`:
+
+```
+$ hal-vault init -r ~/.ssh/id_rsa.pub -i ~/.ssh/id_rsa -d /srv/team-vault
+initialized vault in /srv/team-vault
+recipient: /home/you/.ssh/id_rsa.pub
+identity:  /home/you/.ssh/id_rsa
+```
+
+Every command accepts `-d` to select the vault directory; the
+`HAL_VAULT_DIR` environment variable works too.
 
 ### Add a secret
 

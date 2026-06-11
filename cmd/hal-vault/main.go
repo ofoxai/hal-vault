@@ -37,8 +37,9 @@ Every command also accepts -d DIR to select the vault directory
 (default $HAL_VAULT_DIR, or ~/.hal-vault).
 
 Options:
-    -r PUBKEY      SSH public key the vault encrypts to (default
-                   ~/.ssh/id_ed25519.pub, or ~/.ssh/id_rsa.pub).
+    -r PUBKEY      SSH public key the vault encrypts to. Default: the
+                   dedicated key ~/.ssh/hal-vault_ed25519.pub, generated
+                   on first init. Pass -r/-i to use an existing key pair.
     -i PRIVKEY     Matching SSH private key, used for decryption.
     -t TYPE        Entry type: api_key, password, token, ssh_key, cert,
                    identity, or other (the default).

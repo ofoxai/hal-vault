@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -233,5 +234,46 @@ func TestExitCodes(t *testing.T) {
 	// Unknown command → 2.
 	if code, _, _ := runCmd(t, nil, "frobnicate"); code != 2 {
 		t.Errorf("unknown command: exit %d, want 2", code)
+	}
+}
+
+func TestInitGeneratesDedicatedKey(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home) // os.UserHomeDir reads $HOME on Unix
+	if runtime.GOOS == "windows" {
+		t.Setenv("USERPROFILE", home)
+	}
+
+	dir := filepath.Join(home, "vault-a")
+	code, stdout, stderr := runCmd(t, nil, "init", "-d", dir)
+	if code != 0 {
+		t.Fatalf("init failed (%d): %s", code, stderr)
+	}
+	priv := filepath.Join(home, ".ssh", "hal-vault_ed25519")
+	if !strings.Contains(stdout, "generated SSH key pair") {
+		t.Errorf("first init should report key generation:\n%s", stdout)
+	}
+	for _, p := range []string{priv, priv + ".pub"} {
+		if _, err := os.Stat(p); err != nil {
+			t.Errorf("dedicated key %s missing: %v", p, err)
+		}
+	}
+
+	// The generated key must actually work end to end.
+	if code, _, stderr := runCmd(t, []byte("dedicated-key-secret-123\n"), "add", "probe", "-d", dir); code != 0 {
+		t.Fatalf("add with generated key failed: %s", stderr)
+	}
+	if _, stdout, _ := runCmd(t, nil, "get", "probe", "--reveal", "-d", dir); stdout != "dedicated-key-secret-123\n" {
+		t.Errorf("roundtrip through generated key = %q", stdout)
+	}
+
+	// A second init (new vault dir) must reuse the key, not regenerate.
+	dirB := filepath.Join(home, "vault-b")
+	code, stdout, stderr = runCmd(t, nil, "init", "-d", dirB)
+	if code != 0 {
+		t.Fatalf("second init failed (%d): %s", code, stderr)
+	}
+	if strings.Contains(stdout, "generated SSH key pair") {
+		t.Errorf("second init must reuse the existing dedicated key:\n%s", stdout)
 	}
 }

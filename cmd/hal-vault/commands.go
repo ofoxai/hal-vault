@@ -29,12 +29,15 @@ func cmdInit(args []string, stdout, stderr io.Writer) error {
 	if len(pos) != 0 {
 		return usageErrorf("init takes no arguments")
 	}
-	recipient, identity, err := resolveKeyPair(*rPath, *iPath)
+	recipient, identity, generated, err := resolveKeyPair(*rPath, *iPath)
 	if err != nil {
 		return err
 	}
 	if _, err := vault.Init(*dir, recipient, identity); err != nil {
 		return err
+	}
+	if generated {
+		fmt.Fprintf(stdout, "generated SSH key pair: %s\n", identity)
 	}
 	fmt.Fprintf(stdout, "initialized vault in %s\n", *dir)
 	fmt.Fprintf(stdout, "recipient: %s\n", recipient)
@@ -427,36 +430,48 @@ func passphrasePrompt(stdin io.Reader, stderr io.Writer) func() ([]byte, error) 
 	}
 }
 
-// resolveKeyPair fills in defaults for the init key paths. With no flags it
-// looks for a complete ~/.ssh/id_ed25519 or ~/.ssh/id_rsa pair; with only
-// one flag it derives the other path and verifies that the file exists.
-func resolveKeyPair(rPath, iPath string) (recipient, identity string, err error) {
+// defaultKeyName is the dedicated hal-vault SSH key in ~/.ssh. It is named
+// after hal-vault and kept separate from the user's day-to-day SSH keys, so
+// rotating or replacing those never locks the vault.
+const defaultKeyName = "hal-vault_ed25519"
+
+// resolveKeyPair resolves the init key paths. With both flags it uses any
+// existing SSH key pair as given; with one flag it derives the other path.
+// With no flags it uses the dedicated key ~/.ssh/hal-vault_ed25519,
+// generating it on first use. generated reports whether a new key pair was
+// created.
+func resolveKeyPair(rPath, iPath string) (recipient, identity string, generated bool, err error) {
 	switch {
 	case rPath == "" && iPath == "":
 		home, err := os.UserHomeDir()
 		if err != nil {
-			return "", "", fmt.Errorf("locating home directory: %w", err)
+			return "", "", false, fmt.Errorf("locating home directory: %w", err)
 		}
-		for _, base := range []string{"id_ed25519", "id_rsa"} {
-			priv := filepath.Join(home, ".ssh", base)
-			if fileExists(priv) && fileExists(priv+".pub") {
-				return priv + ".pub", priv, nil
-			}
+		priv := filepath.Join(home, ".ssh", defaultKeyName)
+		pub := priv + ".pub"
+		switch {
+		case fileExists(priv) && fileExists(pub):
+			return pub, priv, false, nil
+		case fileExists(priv) || fileExists(pub):
+			return "", "", false, fmt.Errorf("incomplete key pair at %s(.pub); remove it or pass -r and -i", priv)
 		}
-		return "", "", errors.New("no SSH key pair found in ~/.ssh (looked for id_ed25519 and id_rsa); use -r and -i")
+		if _, err := vault.GenerateSSHKeyPair(priv, "hal-vault"); err != nil {
+			return "", "", false, fmt.Errorf("generating hal-vault SSH key: %w", err)
+		}
+		return pub, priv, true, nil
 	case iPath == "":
 		priv := strings.TrimSuffix(rPath, ".pub")
 		if priv != rPath && fileExists(priv) {
-			return rPath, priv, nil
+			return rPath, priv, false, nil
 		}
-		return "", "", errors.New("cannot derive the private key path from -r; use -i")
+		return "", "", false, errors.New("cannot derive the private key path from -r; use -i")
 	case rPath == "":
 		if pub := iPath + ".pub"; fileExists(pub) {
-			return pub, iPath, nil
+			return pub, iPath, false, nil
 		}
-		return "", "", errors.New("cannot find the public key next to -i; use -r")
+		return "", "", false, errors.New("cannot find the public key next to -i; use -r")
 	default:
-		return rPath, iPath, nil
+		return rPath, iPath, false, nil
 	}
 }
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.0.2 (unreleased)
+
+- `init` now defaults to a dedicated `~/.ssh/hal-vault_ed25519` key pair,
+  generated on first use, instead of borrowing `~/.ssh/id_ed25519` /
+  `id_rsa`. Rotating your day-to-day SSH keys can no longer lock the vault.
+  Bring an existing key with `-r` / `-i`; pick the database directory with
+  `-d` (unchanged).
+- New library function `vault.GenerateSSHKeyPair`.
+
 ## v0.0.1 - 2026-06-11
 
 Initial release.
