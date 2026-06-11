@@ -12,14 +12,38 @@ hal-vault is a simple, modern and secure secret store CLI and Go library, with S
 
 ## Installation
 
+### Pre-built binaries
+
+Binaries for Linux, macOS, and Windows are published on the
+[releases page](https://github.com/ofoxai/hal-vault/releases), packaged as
+`hal-vault-<version>-<os>-<arch>.tar.gz` (`.zip` for Windows) with build
+provenance attestations.
+
+```
+# Download the archive for your platform (or use `gh release download`),
+# then unpack and install:
+tar -xzf hal-vault-v0.0.1-darwin-arm64.tar.gz
+install -m 0755 hal-vault/hal-vault /usr/local/bin/hal-vault
+hal-vault version
+```
+
+While the repository is private (before the 1.0.0 public release), use the
+GitHub CLI to fetch a release:
+
+```
+gh release download v0.0.1 --repo ofoxai/hal-vault --pattern '*darwin-arm64*'
+```
+
+Provenance can be verified with `gh attestation verify <archive> --repo ofoxai/hal-vault`.
+
+### From source
+
 ```
 go install github.com/ofoxai/hal-vault/cmd/hal-vault@latest
 ```
 
-Pre-built binaries for Linux, macOS, and Windows are available on the
-[releases page](https://github.com/ofoxai/hal-vault/releases), packaged as
-`hal-vault-<version>-<os>-<arch>.tar.gz` (`.zip` for Windows) with build
-provenance attestations.
+(While the repository is private this requires repo access and
+`GOPRIVATE=github.com/ofoxai`.)
 
 ## Usage
 
