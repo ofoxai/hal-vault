@@ -76,6 +76,39 @@ command substitution:
 $ OPENAI_API_KEY="$(hal-vault get openai --reveal)" ./deploy.sh
 ```
 
+Many secrets for one command — keep a template of references in the repo
+and let `run` resolve them (requires hal-vault v0.1.0 or later):
+
+```
+$ cat .env.tpl
+OPENAI_API_KEY=hal7://openai
+GITHUB_TOKEN=hal7://github-pat
+PORT=8080
+$ hal-vault check --env-file .env.tpl
+GITHUB_TOKEN    hal7://github-pat  g9je4p github-pat: ghp-…cdef (21 chars)
+OPENAI_API_KEY  hal7://openai      7q3k2m openai: sk-p…7890 (24 chars)
+all 2 references resolve.
+$ hal-vault run --env-file .env.tpl -- ./deploy.sh
+```
+
+A value of exactly `hal7://<label-or-id>` is a reference, resolved like
+`get` (an ambiguous label fails and lists the candidate IDs); every other
+value passes through untouched. `run` decrypts the vault once, puts the
+values only into the child's environment — never into a file or argv —
+and starts nothing if any reference fails, listing every failure. The
+environment is the current one (whose own `hal7://` values are resolved
+too, so `KEY=hal7://x hal-vault run -- cmd` works) plus each `--env-file`
+in order, later files winning. stdin, SIGINT/SIGTERM and the exit code are
+passed through.
+
+By default `run` masks the injected secrets wherever they appear in the
+child's stdout and stderr, even when split across writes. Values shorter
+than 6 characters are left alone, so `PORT=8080` does not mangle output.
+Masking pipes the child's output, so for interactive programs that need a
+real terminal, add `--no-masking`. Env files are a dotenv subset:
+`KEY=VALUE`, `export KEY=VALUE`, `#` comments, blank lines, and single- or
+double-quoted values; there is no `${VAR}` expansion.
+
 Rotate and remove:
 
 ```

@@ -43,6 +43,19 @@
   environment variable inherited by a child process — is outside hal-vault's
   threat model.
 
+### `run` and `hal7://` references
+
+- **What it adds.** A template of `hal7://` references holds no secrets and
+  can be committed. `run` keeps resolved values out of files, argv and its
+  own output, and masks them in the child's stdout and stderr by default.
+- **What it does not.** Once injected, a value is an ordinary environment
+  variable of the child: the child and its descendants can read it, write
+  it to files, or send it anywhere, and on most systems processes of the
+  same user can read another process's environment. Output masking is a
+  guard against accidental echoes, not a sandbox: it misses values that
+  the child transforms (encodes, splits across lines, reorders) and values
+  shorter than 6 characters, and `--no-masking` turns it off.
+
 ## Reporting a vulnerability
 
 Please report security issues privately via a
