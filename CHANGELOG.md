@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.1.0 - Unreleased
+## v0.1.0 - 2026-11-18
 
 - New `hal7://` references: an environment value of exactly
   `hal7://<label-or-id>` points at a vault entry and is resolved like `get`.
