@@ -288,6 +288,7 @@ func cmdRm(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	}
 	if !*force {
 		if !isTerminal(stdin) {
+			//lint:ignore ST1005 HAL voice
 			return errors.New("I'm sorry, I can't remove entries without -f when no one is at the terminal")
 		}
 		fmt.Fprintf(stderr, "remove %s (%s)? [y/N] ", e.ID, e.Label)
@@ -371,6 +372,7 @@ func readSecret(stdin io.Reader, stderr io.Writer) (string, error) {
 		return "", err
 	}
 	if !utf8.ValidString(v) {
+		//lint:ignore ST1005 HAL voice
 		return "", errors.New("I'm afraid I can't store that: the value is not valid UTF-8 (base64-encode binary secrets first)")
 	}
 	return v, nil
