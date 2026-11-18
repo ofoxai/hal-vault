@@ -47,6 +47,13 @@ func TestHelperProcess(t *testing.T) {
 		os.Stdout.Sync()
 		time.Sleep(100 * time.Millisecond)
 		os.Stdout.WriteString(v[len(v)/2:] + ">\n")
+	case "split-at": // the value's first N bytes, a pause, then the rest
+		v := os.Getenv(rest[0])
+		n, _ := strconv.Atoi(rest[1])
+		os.Stdout.WriteString(v[:n])
+		os.Stdout.Sync()
+		time.Sleep(100 * time.Millisecond)
+		os.Stdout.WriteString(v[n:] + " end\n")
 	case "cat":
 		io.Copy(os.Stdout, os.Stdin)
 	case "exit":
@@ -156,6 +163,29 @@ func TestRunMasksStderrAndSplitWrites(t *testing.T) {
 	code, stdout, _ = runWith(t, dir, nil, []string{"--env-file", tpl}, "split", "OPENAI_API_KEY")
 	if code != 0 || stdout != "<"+vault.Mask(testSecret)+">\n" {
 		t.Errorf("split write: exit %d, stdout %q", code, stdout)
+	}
+}
+
+// Regression: with a second secret that is a prefix of the first, a write
+// boundary at the end of the prefix must not leave the rest of the longer
+// secret in the clear.
+func TestRunMasksLongerSecretSplitAfterPrefixSecret(t *testing.T) {
+	dir := newTestVaultDir(t)
+	long, prefix := "sk-test-AAAA1111BBBB2222", "sk-test-AAAA"
+	addSecret(t, dir, "openai", long)
+	addSecret(t, dir, "prefix", prefix)
+	tpl := writeEnvFile(t, "OPENAI_API_KEY=hal7://openai\nPFX=hal7://prefix\n")
+
+	code, stdout, stderr := runWith(t, dir, nil, []string{"--env-file", tpl},
+		"split-at", "OPENAI_API_KEY", strconv.Itoa(len(prefix)))
+	if code != 0 {
+		t.Fatalf("run failed (%d): %s", code, stderr)
+	}
+	if strings.Contains(stdout, "1111BBBB2222") {
+		t.Fatalf("the tail of the longer secret leaked: %q", stdout)
+	}
+	if want := vault.Mask(long) + " end\n"; stdout != want {
+		t.Errorf("stdout = %q, want %q", stdout, want)
 	}
 }
 
